@@ -49,6 +49,7 @@ public class SeniorSorter implements Runnable
     private HashMap<File, Long> imageData;
     private HashMap<String, Long> timestampData; // An hashMap of a students id and the timestamp that it was scanned
     private int id;
+    private long cameraTimeOffset;
     
     public SeniorSorter(File directory, UserInterface prnt, int threadId) throws IOException
     {
@@ -59,6 +60,7 @@ public class SeniorSorter implements Runnable
             cameraDirectory = directory;
             imageData = new HashMap<>();
             timestampData = new HashMap<>();
+            cameraTimeOffset = 0;
 
             // set the image directory
             imageDirectory = new File(cameraDirectory.getAbsolutePath() + "/Images");
@@ -206,13 +208,25 @@ public class SeniorSorter implements Runnable
         // For the gui update
         int idCount = imageDataList.size();
         
+        //Take the first image and the first timestamp scan taken, which is last in the list, 
+        //and sync the camera time to the timestamp time.Both are throwaways.
+        if(!timestampList.isEmpty() && !imageDataList.isEmpty() && parent.syncTime)
+        {
+            Map.Entry<File, Long> iData = imageDataList.pollLast();
+            Map.Entry<String, Long> tsData = timestampList.pollLast();
+            
+            //Make the offset
+            cameraTimeOffset = tsData.getValue() - iData.getValue();
+        }
+        
+        
         //add the file to the top timestamp student until it is no longer more than it
         while(!timestampList.isEmpty() && !imageDataList.isEmpty())
         {
             Map.Entry<File, Long> iData = imageDataList.peekFirst();
             Map.Entry<String, Long> tsData = timestampList.pollFirst();
             ArrayList<File> studentImages = new ArrayList<>();
-            while(!imageDataList.isEmpty() && iData.getValue() > tsData.getValue())
+            while(!imageDataList.isEmpty() && iData.getValue() + cameraTimeOffset > tsData.getValue())
             {
                 iData = imageDataList.pollFirst();
                 studentImages.add(iData.getKey());

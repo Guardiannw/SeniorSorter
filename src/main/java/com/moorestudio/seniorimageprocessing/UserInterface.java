@@ -3,23 +3,20 @@ package com.moorestudio.seniorimageprocessing;
 import java.awt.Color;
 import java.io.*;
 import static java.lang.Math.round;
-import static java.lang.Math.round;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.*;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.logging.Logger.getLogger;
+import java.util.stream.IntStream;
 import javax.swing.JFileChooser;
 import static javax.swing.SwingUtilities.invokeLater;
 import static javax.swing.UIManager.getSystemLookAndFeelClassName;
-import static javax.swing.UIManager.setLookAndFeel;
 import static javax.swing.UIManager.setLookAndFeel;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -54,6 +51,7 @@ public class UserInterface extends javax.swing.JFrame {
     private int numWritableThreads;
     private int numCompletedThreads;
     private double progress;
+    public boolean syncTime;
 
     //Set up the thread executor service
     private ExecutorService threadExecutor;
@@ -64,6 +62,9 @@ public class UserInterface extends javax.swing.JFrame {
     public UserInterface() {
         initComponents();
         initForStart();
+        
+        //Set components that only need to be set up at app start.
+        syncTime = true;
 
         try {
             jaxbContext = JAXBContext.newInstance(SeniorSorterData.class);
@@ -146,6 +147,9 @@ public class UserInterface extends javax.swing.JFrame {
         selectDestinationText = new javax.swing.JTextField();
         browseDestinationButton = new javax.swing.JButton();
         outputLog = new javax.swing.JLabel();
+        syncTimeToggleButton = new javax.swing.JToggleButton();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
         mainMenu = new javax.swing.JMenuBar();
         fileMenuItem = new javax.swing.JMenu();
         editMenuItem = new javax.swing.JMenu();
@@ -200,6 +204,20 @@ public class UserInterface extends javax.swing.JFrame {
 
         outputLog.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 
+        syncTimeToggleButton.setSelected(true);
+        syncTimeToggleButton.setText("ON");
+        syncTimeToggleButton.setToolTipText("");
+        syncTimeToggleButton.setActionCommand("toggleSyncTime");
+        syncTimeToggleButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                syncTimeToggleButtonActionPerformed(evt);
+            }
+        });
+
+        jLabel1.setText("Options");
+
+        jLabel2.setText("Sync Time: ");
+
         mainMenu.setBackground(java.awt.SystemColor.menu);
         mainMenu.setForeground(java.awt.SystemColor.menuText);
 
@@ -227,31 +245,44 @@ public class UserInterface extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addGroup(layout.createSequentialGroup()
                                         .addComponent(selectImageLabel)
                                         .addGap(18, 18, 18)
-                                        .addComponent(selectImageText, javax.swing.GroupLayout.DEFAULT_SIZE, 743, Short.MAX_VALUE))
-                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(selectImageText))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                                         .addComponent(selectDataLabel)
                                         .addGap(18, 18, 18)
                                         .addComponent(selectDataText))
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(selectDestinationLabel)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                                .addComponent(jLabel2)
+                                                .addGap(18, 18, 18)
+                                                .addComponent(syncTimeToggleButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                            .addComponent(selectDestinationLabel))
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(selectDestinationText)))
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addComponent(selectDestinationText)
+                                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                                .addGap(0, 0, Short.MAX_VALUE)
+                                                .addComponent(outputLog, javax.swing.GroupLayout.PREFERRED_SIZE, 661, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addGap(39, 39, 39)))))
                                 .addGap(25, 25, 25)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(browseDataButton, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(browseImageButton, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(browseDestinationButton, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addComponent(outputLog, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                    .addComponent(browseDestinationButton, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE))))
                         .addContainerGap())
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(startButton, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(67, 67, 67)
+                .addComponent(jLabel1)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -271,9 +302,17 @@ public class UserInterface extends javax.swing.JFrame {
                     .addComponent(selectDestinationLabel)
                     .addComponent(selectDestinationText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(browseDestinationButton))
-                .addGap(37, 37, 37)
-                .addComponent(outputLog, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel1)
+                .addGap(14, 14, 14)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(outputLog, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addGap(3, 3, 3)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel2)
+                            .addComponent(syncTimeToggleButton))))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 21, Short.MAX_VALUE)
                 .addComponent(startButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -376,6 +415,16 @@ public class UserInterface extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_startButtonActionPerformed
 
+    private void syncTimeToggleButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_syncTimeToggleButtonActionPerformed
+        syncTime = syncTimeToggleButton.isSelected(); // Override the syncTime with the actual button results
+        
+        //If syncTime is selected, then change the text to On
+        if(syncTime)
+            syncTimeToggleButton.setText("ON");
+        else
+            syncTimeToggleButton.setText("OFF");
+    }//GEN-LAST:event_syncTimeToggleButtonActionPerformed
+
     private void startProcess() {
         try {
             //Set up the GUI
@@ -394,30 +443,24 @@ public class UserInterface extends javax.swing.JFrame {
 
             //load in all of the student data for the threads to use
             HashMap<Integer, String> rowHeaders = new HashMap<>();
-            Scanner scanner = new Scanner(dataFile);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(dataFile)));
+            
+            //Read in the header file
+            String[] headers = reader.readLine().replace("\"", "").split(",");
+            IntStream.range(0, headers.length).forEach((x) -> { rowHeaders.put(x, headers[x].trim()); });
 
-            for (boolean first = true; scanner.hasNextLine();) {
-                if (first) {
-                    //read the first line (headers) from the file and split on comma's
-                    String[] headers = scanner.nextLine().replace("\"", "").split(",");
-                    for (int i = 0; i < headers.length; i++) {
-                        rowHeaders.put(i, headers[i].trim());
-                    }
-
-                    first = false;
-                } else {
-                    //Create the new student map
-                    HashMap<String, String> studentMap = new HashMap<>();
-                    String[] lineInformation = scanner.nextLine().replace("\"", "").split(",");
-                    for (int i = 0; i < lineInformation.length; i++) {
-                        studentMap.put(rowHeaders.get(i).toUpperCase().trim(), lineInformation[i].trim());
-                    }
-
-                    //add the student map to the student information array
-                    studentInformation.put(studentMap.get("ID"), studentMap);
+            reader.lines().forEach((line) -> {
+                //Create the new student map
+                HashMap<String, String> studentMap = new HashMap<>();
+                String[] lineInformation = line.replace("\"", "").split(",");
+                for (int i = 0; i < lineInformation.length; i++) {
+                    studentMap.put(rowHeaders.get(i).toUpperCase().trim(), lineInformation[i].trim());
                 }
-            }
 
+                //add the student map to the student information array
+                studentInformation.put(studentMap.get("ID"), studentMap);
+            });
+            
             threadExecutor = newCachedThreadPool(); //re-initialize the thread executor
 
             //get the camera folders
@@ -520,11 +563,10 @@ public class UserInterface extends javax.swing.JFrame {
     public synchronized void acknowledgeFinished() throws InterruptedException , FileNotFoundException, IOException{
         numCompletedThreads++;
         if (numCompletedThreads == numThreads) {
-            stopProcess();
             writeLogFile();
             outputLog.setForeground(Color.BLACK);
             outputLog.setText("Process Completed Successfully!");
-            notifyAll();
+            stopProcess();
         }
     }
 
@@ -545,17 +587,21 @@ public class UserInterface extends javax.swing.JFrame {
             //Write each student and the number of images they had, along with the image names.
             studentInformation.forEach((id, info) -> {
                 try{
-                    //Get the students name and id and write it out
-                    fileWriter.write("Student: " + info.get("LAST") + ", " + info.get("FIRST") + " ID: " + id + "\t\t" + studentImages.get(id).size() + " Images\n");
+                    //Only write out the student if they actually have images
+                    if(studentImages.containsKey(id))
+                    {
+                        //Get the students name and id and write it out
+                        fileWriter.write("Student: " + info.get("LAST") + ", " + info.get("FIRST") + " ID: " + id + "\t\t" + studentImages.get(id).size() + " Images\n");
 
-                    //Write out the names of each of the images below the student
-                    studentImages.get(id).parallelStream().forEach((img) -> {
-                        try {
-                            fileWriter.write("\t" + img.getName() + "\n");
-                        } catch (IOException e) {
-                            System.out.println("Unable to print out the student image to the log file.");
-                        }
-                    });
+                        //Write out the names of each of the images below the student
+                        studentImages.get(id).stream().forEach((img) -> {
+                            try {
+                                fileWriter.write("\t" + img.getName() + "\n");
+                            } catch (IOException e) {
+                                System.out.println("Unable to print out the student image to the log file.");
+                            }
+                        });
+                    }
                 }
                 catch(IOException e)
                 {
@@ -603,6 +649,8 @@ public class UserInterface extends javax.swing.JFrame {
     private javax.swing.JMenu editMenuItem;
     private javax.swing.JMenu fileMenuItem;
     private javax.swing.JMenu helpMenuItem;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JMenuBar mainMenu;
     private javax.swing.JLabel outputLog;
     public javax.swing.JProgressBar progressBar;
@@ -613,5 +661,6 @@ public class UserInterface extends javax.swing.JFrame {
     private javax.swing.JLabel selectImageLabel;
     private javax.swing.JTextField selectImageText;
     private javax.swing.JButton startButton;
+    private javax.swing.JToggleButton syncTimeToggleButton;
     // End of variables declaration//GEN-END:variables
 }
